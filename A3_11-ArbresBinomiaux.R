@@ -329,8 +329,8 @@ option$exertree # TRUE : exerce l'option
 # !!! les deux lignes suivantes ne fonctionnent pas; c'est logique quand on 
 # regarde les formules (voir les formules de la section 3.11 pour le calcul à la 
 # main)
-option$deltatree # arbre des deltas
-option$bondtree # arbre de B
+# option$deltatree # arbre des deltas
+# option$bondtree # arbre de B
 
 ## Graphique assopcié ----
 binomplotdc(s = s0,
