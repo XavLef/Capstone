@@ -13,7 +13,7 @@ binomplotdc <- function (s, k, v, r, tt, d, nstep, putopt = FALSE, american = TR
                          saveplot = FALSE, saveplotfn = "binomialplot.pdf",
                          crr = FALSE, jarrowrudd = FALSE, titles = TRUE,
                          specifyupdn = FALSE,
-                         up = 1.5, dn = 0.5, returnprice = FALSE, logy = FALSE)
+                         up = 1.5, dn = 0.5, returnprice = FALSE, logy = FALSE, devise = FALSE)
 {
   setylim <- ifelse((sum(ylimval^2) == 0), FALSE, TRUE)
   y <- binomopt(s, k, v, r, tt, d, nstep, american, putopt,
@@ -47,7 +47,7 @@ binomplotdc <- function (s, k, v, r, tt, d, nstep, putopt = FALSE, american = TR
        pch = 21, cex = ifelse(stree[stree >
                                       0], sqrt(probtree[stree > 0]) * pointsize, 1), bg = plotcolor[stree >
                                                                                                       0], xlab = "Période binomiale", ylab = "Prix de l'action",
-       main = paste("Arbre binomial à 4 périodes
+       main = paste("Arbre binomial à ", nstep, " périodes
     pour l'option", ifelse(putopt, "de vente", "d'achat"),
                     ifelse(american, "américaine", "européenne")),
        log = ifelse(logy, "y", ""),
@@ -56,10 +56,10 @@ binomplotdc <- function (s, k, v, r, tt, d, nstep, putopt = FALSE, american = TR
   axis(1, at = c(0, 0.25, 0.5, 0.75, 1))
   
   if (titles)
-    mtext(paste0("Stock = ", format(s, digits = 3), ", Strike = ",
-                 format(k, digits = 3), ", Time = ", format(tt, digits = 4),
+    mtext(paste0("Stock = ", format(s, digits = 4), ", Strike = ",
+                 format(k, digits = 4), ", Time = ", format(tt, digits = 4),
                  ifelse(tt == 1, " year,", " years,"), " Price = ",
-                 format(oppricetree[1, 1], digits = 5)))
+                 format(oppricetree[1, 1], digits = 4)))
   if (drawstrike)
     abline(h = k)
   yoffset <- ifelse(setylim, 0.03 * (ylimval[2] - ylimval[1]),
@@ -73,30 +73,62 @@ binomplotdc <- function (s, k, v, r, tt, d, nstep, putopt = FALSE, american = TR
     }
   }
   if (plotvalues) {
-    for (i in 1:(nstep + 1)) {
-      text((i - 1) * h, stree[1:i, i] + yoffset,
-           paste0("St = ", format(stree[1:i,
-                                        i], digits = 3)), cex = 0.6,
-           col = "blue", font = 4)
-      text((i - 1) * h, stree[1:i, i]  + yoffset - 3, paste0("Delta = ",
-                                                             format(dtree[1:i,
-                                                                          i], digits = 3)), cex = 0.5,
-           font = 2)
-      text((i - 1) * h, stree[1:i, i] + yoffset - 6, paste0("B = ",
-                                                            format(btree[1:i,
-                                                                         i], digits = 3)), cex = 0.5,
-           font = 2)
-      text((i - 1) * h, stree[1:i, i] + yoffset - 9,
-           paste0(ifelse(putopt, "P =", "C ="),
-                  format(oppricetree[1:i,
-                                     i], digits = 3)), cex = 0.5,
-           font = 2)
+    
+    if (!devise) {
+      
+      for (i in 1:(nstep + 1)) {
+        text((i - 1) * h, stree[1:i, i] + yoffset,
+             paste0("St = ", format(stree[1:i,
+                                          i], digits = 4)), cex = 0.6,
+             col = "blue", font = 4)
+        text((i - 1) * h, stree[1:i, i]  + yoffset - 3, paste0("Delta = ",
+                                                               format(dtree[1:i,
+                                                                            i], digits = 4)), cex = 0.5,
+             font = 2)
+        text((i - 1) * h, stree[1:i, i] + yoffset - 6, paste0("B = ",
+                                                              format(btree[1:i,
+                                                                           i], digits = 4)), cex = 0.5,
+             font = 2)
+        text((i - 1) * h, stree[1:i, i] + yoffset - 9,
+             paste0(ifelse(putopt, "P =", "C ="),
+                    format(oppricetree[1:i,
+                                       i], digits = 4)), cex = 0.5,
+             font = 2)
+        
+      }
+      
+    } else {
+      
+      for (i in 1:(nstep + 1)) {
+        text((i - 1) * h, stree[1:i, i] + yoffset,
+             paste0("St = ", format(stree[1:i,
+                                          i], digits = 4)), cex = 0.6,
+             col = "blue", font = 4)
+        text((i - 1) * h, stree[1:i, i]  + yoffset - 0.05, paste0("Delta = ",
+                                                                  format(dtree[1:i,
+                                                                               i], digits = 4)), cex = 0.45,
+             font = 2)
+        text((i - 1) * h, stree[1:i, i] + yoffset - 0.1, paste0("B = ",
+                                                                format(btree[1:i,
+                                                                             i], digits = 4)), cex = 0.45,
+             font = 2)
+        text((i - 1) * h, stree[1:i, i] + yoffset - 0.15,
+             paste0(ifelse(putopt, "P =", "C ="),
+                    format(oppricetree[1:i,
+                                       i], digits = 4)), cex = 0.45,
+             font = 2)
+        
+      }
+      
     }
+    
   }
+  
   if (saveplot)
     dev.off()
   if (returnprice)
     return(oppricetree[1, 1])
+  
 }
 
 # Obtention des paramètres: Taux sans risque (rf) ----
@@ -120,18 +152,18 @@ sigma <- sdev * sqrt(1 / j) # sigma = sqrt(S_r^2 / j) = S_r * sqrt(1/j) (on trou
 c(rf, sigma)
 
 # Option (Call/Put) ----
-s0 = 100 # prix du s-jacent à t = 0
-K = 95 # prix d'exercice
+s0 = 40 # prix du s-jacent à t = 0
+K = 40 # prix d'exercice
 sigma = 0.3 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Volatilité (sigma)"
 rf = 0.08 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Taux sans risque (rf)"
-tt = 1 # maturité (T)
+tt = 1/2 # maturité (T)
 nn = 2 # nombre de pas (n)
 # rappel : h = T / n
 delt = 0 # dividend
 american_bool = TRUE # européen (FALSE) ou américain (TRUE)
 putopt_bool = TRUE # call (FALSE) ou put (TRUE)
 
-up_and_down_moves = TRUE # u et d sont donnés (TRUE); FALSE sinon (ignore up et down)
+up_and_down_moves = FALSE # u et d sont donnés (TRUE); FALSE sinon (ignore up et down)
 up = 1.3
 down = 0.8
 
@@ -155,6 +187,11 @@ option <- binomopt(s = s0,
 option$price # prix de l'option
 option$params["up"] # u
 option$params["dn"] # d
+option$oppricetree # arbre de prix de l'option
+option$stree # arbre de prix du s-jacent
+option$exertree # TRUE : exerce l'option
+option$deltatree # arbre des deltas
+option$bondtree # arbre de B
 
 ## Graphique assopcié ----
 binomplotdc(s = s0,
@@ -173,10 +210,147 @@ binomplotdc(s = s0,
             drawstrike = T,
             plotvalues = T, 
             plotarrows = F,
-            ylimval = c(60, 160), 
+            ylimval = c(0.25 * s0, 1.75 * s0), # changer si besoin de plus d'espace sur le graph
             pointsize = 0, 
             titles = F)
 
+# Option (Call/Put) sur devises ----
+x0 = 0.92 # taux de change initial
+s0 = x0 # prix du s-jacent à t = 0 (DIFFÉRENCE)
+K = 0.85 # prix d'exercice (en devise domestique)
+sigma = 0.3 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Volatilité (sigma)"
+r_dom = 0.04 # taux d’intérêt domestique
+rf = r_dom # DIFFÉRENCE
+tt = 3/4 # maturité (T)
+nn = 3 # nombre de pas (n)
+# rappel : h = T / n
+r_etr = 0.03 # taux d’intérêt étranger
+delt = r_etr # DIFFÉRENCE
+american_bool = TRUE # européen (FALSE) ou américain (TRUE)
+putopt_bool = FALSE # call (FALSE) ou put (TRUE)
 
+up_and_down_moves = TRUE # u et d sont donnés (TRUE) alors overwrite sigma; FALSE sinon (ignore up et down)
+up = 1.2
+down = 0.9
 
+option <- binomopt(s = s0,
+                   k = K,
+                   v = sigma, # (annualized standard deviation of the continuously-compounded return)
+                   r = rf, # (annual continuously-compounded risk-free interest rate)
+                   tt = tt,
+                   nstep = nn,
+                   d = delt, # (annualized, continuously-compounded)
+                   american = american_bool,
+                   putopt = putopt_bool,
+                   specifyupdn = up_and_down_moves,
+                   up = up,
+                   dn = down,
+                   # ne pas toucher les autres arguments
+                   returntrees = TRUE, 
+                   returnparams = TRUE,
+                   returngreeks = TRUE)
 
+option$price # prix de l'option
+option$params["up"] # u
+option$params["dn"] # d
+option$oppricetree # arbre de prix de l'option
+option$stree # arbre de prix du s-jacent
+option$exertree # TRUE : exerce l'option
+
+# !!! les deux lignes suivantes ne sont pas validées encore (je ne trouve pas d'exemple)
+option$deltatree # arbre des deltas
+option$bondtree # arbre de B
+
+## Graphique assopcié ----
+binomplotdc(s = s0,
+            k = K, 
+            v = sigma, 
+            r = rf, 
+            tt = tt,
+            nstep = nn,
+            d = delt, 
+            american = american_bool, 
+            putopt = putopt_bool,
+            specifyupdn = up_and_down_moves,
+            up = up,
+            dn = down,
+            # ne pas toucher les autres arguments
+            drawstrike = T,
+            plotvalues = T, 
+            plotarrows = F,
+            ylimval = c(0.5 * s0, 1.5 * s0), # changer si besoin de plus d'espace sur le graph
+            pointsize = 0, 
+            titles = F,
+            devise = T) # DIFFÉRENCE
+
+# Option (Call/Put) sur futures ----
+F0t = 300 # prix future
+s0 = F0t # prix du s-jacent à t = 0 (DIFFÉRENCE)
+K = 290 # prix d'exercice (par défaut K = F0t)
+sigma = 0.1 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Volatilité (sigma)"
+rf = 0.06 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Taux sans risque (rf)"
+tt = 1 # maturité (T)
+nn = 1 # nombre de pas (n)
+# rappel : h = T / n
+delt = rf # dividend (DIFFÉRENCE)
+american_bool = FALSE # européen (FALSE) ou américain (TRUE)
+putopt_bool = FALSE # call (FALSE) ou put (TRUE)
+
+CRR = TRUE # Cox-Ross-Rubinstein tree (DIFFÉRENCE)
+up_and_down_moves = FALSE # u et d sont donnés (TRUE); FALSE sinon (ignore up et down)
+up = 1.3
+down = 0.8
+
+option <- binomopt(s = s0,
+                   k = K,
+                   v = sigma, # (annualized standard deviation of the continuously-compounded return)
+                   r = rf, # (annual continuously-compounded risk-free interest rate)
+                   tt = tt,
+                   nstep = nn,
+                   d = delt, # (annualized, continuously-compounded)
+                   american = american_bool,
+                   putopt = putopt_bool,
+                   crr = CRR, # DIFFÉRENCE
+                   specifyupdn = up_and_down_moves,
+                   up = up,
+                   dn = down,
+                   # ne pas toucher les autres arguments
+                   returntrees = TRUE, 
+                   returnparams = TRUE,
+                   returngreeks = TRUE)
+
+option$price # prix de l'option
+option$params["up"] # u
+option$params["dn"] # d
+option$oppricetree # arbre de prix de l'option
+option$stree # arbre de prix du s-jacent
+option$exertree # TRUE : exerce l'option
+
+# !!! les deux lignes suivantes ne fonctionnent pas; c'est logique quand on 
+# regarde les formules (voir les formules de la section 3.11 pour le calcul à la 
+# main)
+option$deltatree # arbre des deltas
+option$bondtree # arbre de B
+
+## Graphique assopcié ----
+binomplotdc(s = s0,
+            k = K, 
+            v = sigma, 
+            r = rf, 
+            tt = tt,
+            nstep = nn,
+            d = delt, 
+            american = american_bool, 
+            putopt = putopt_bool,
+            specifyupdn = up_and_down_moves,
+            up = up,
+            dn = down,
+            # ne pas toucher les autres arguments
+            drawstrike = T,
+            plotvalues = T, 
+            plotarrows = F,
+            ylimval = c(0.85 * s0, 1.15 * s0), # changer si besoin de plus d'espace sur le graph
+            pointsize = 0, 
+            titles = F)
+
+# Note : J'imagine qu'il existe une manière plus efficace d'ajuster ylimval (à revoir - pas si important)
