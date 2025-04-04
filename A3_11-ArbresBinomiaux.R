@@ -2,6 +2,7 @@
 ### A3.11 - Modèles binomiaux d’évaluation - arbres binomiaux
 ###
 library(derivmkts)
+
 # Fonction pour dessiner l'arbre binomial ----
 ## Note: Comme la fonction est reprise de façon identique (ou presque) à la fonction
 ## binomplot, on peut se référer à la documentation de cette fonction pour comprendre
@@ -143,7 +144,7 @@ values <- read.csv2("DonnéesTPGRF2.csv") # prix du s-jacent par période de lon
 
 j <- 1/12 # longueur des périodes (fraction d'année)
 
-rdm_log <- log(values$St[-1] / values$St[-length(values$St)]) # rendements du s-jacent
+rdm_log <- log(values$St[-1] / values$St[-length(values$St)]) # rendements du s-jacent par période de longueur j
 
 sdev <- sd(rdm_log) # écart-type échantillonnal du s-jacent (S_r) par période de longueur j
 
