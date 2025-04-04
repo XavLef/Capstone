@@ -1,7 +1,7 @@
 #### Examen synthèse Capstone
 ### A3.11 - Modèles binomiaux d’évaluation - arbres binomiaux
 ###
-
+library(derivmkts)
 # Fonction pour dessiner l'arbre binomial ----
 ## Note: Comme la fonction est reprise de façon identique (ou presque) à la fonction
 ## binomplot, on peut se référer à la documentation de cette fonction pour comprendre
@@ -54,7 +54,7 @@ binomplotdc <- function (s, k, v, r, tt, d, nstep, putopt = FALSE, american = TR
        xlim = c(0 - h * 0.2, tt + h * 0.2),
        xaxt = "n")
   axis(1, at = c(0, 0.25, 0.5, 0.75, 1))
-  
+
   if (titles)
     mtext(paste0("Stock = ", format(s, digits = 4), ", Strike = ",
                  format(k, digits = 4), ", Time = ", format(tt, digits = 4),
@@ -73,9 +73,9 @@ binomplotdc <- function (s, k, v, r, tt, d, nstep, putopt = FALSE, american = TR
     }
   }
   if (plotvalues) {
-    
+
     if (!devise) {
-      
+
       for (i in 1:(nstep + 1)) {
         text((i - 1) * h, stree[1:i, i] + yoffset,
              paste0("St = ", format(stree[1:i,
@@ -94,11 +94,11 @@ binomplotdc <- function (s, k, v, r, tt, d, nstep, putopt = FALSE, american = TR
                     format(oppricetree[1:i,
                                        i], digits = 4)), cex = 0.5,
              font = 2)
-        
+
       }
-      
+
     } else {
-      
+
       for (i in 1:(nstep + 1)) {
         text((i - 1) * h, stree[1:i, i] + yoffset,
              paste0("St = ", format(stree[1:i,
@@ -117,25 +117,25 @@ binomplotdc <- function (s, k, v, r, tt, d, nstep, putopt = FALSE, american = TR
                     format(oppricetree[1:i,
                                        i], digits = 4)), cex = 0.45,
              font = 2)
-        
+
       }
-      
+
     }
-    
+
   }
-  
+
   if (saveplot)
     dev.off()
   if (returnprice)
     return(oppricetree[1, 1])
-  
+
 }
 
 # Obtention des paramètres: Taux sans risque (rf) ----
 rates <- read.csv("bonsTresor1an.csv", header = TRUE, skip = 10)
 
 # rates : risk free rates (ex : si 3 % alors rates = 3, pas 0.03)
-rf <- log(1 + mean(rates$V122498 / 100)) # mean(rates$V122498 / 100) est le rf 
+rf <- log(1 + mean(rates$V122498 / 100)) # mean(rates$V122498 / 100) est le rf
 # moyen et log(1 + x) donne la version annuelle composée continuement
 
 # Obtention des paramètres: Volatilité (sigma) ----
@@ -152,20 +152,20 @@ sigma <- sdev * sqrt(1 / j) # sigma = sqrt(S_r^2 / j) = S_r * sqrt(1/j) (on trou
 c(rf, sigma)
 
 # Option (Call/Put) ----
-s0 = 40 # prix du s-jacent à t = 0
-K = 40 # prix d'exercice
+s0 = 100 # prix du s-jacent à t = 0
+K = 95 # prix d'exercice
 sigma = 0.3 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Volatilité (sigma)"
 rf = 0.08 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Taux sans risque (rf)"
-tt = 1/2 # maturité (T)
-nn = 2 # nombre de pas (n)
+tt = 1 # maturité (T)
+nn = 3 # nombre de pas (n)
 # rappel : h = T / n
 delt = 0 # dividend
-american_bool = TRUE # européen (FALSE) ou américain (TRUE)
+american_bool = FALSE # européen (FALSE) ou américain (TRUE)
 putopt_bool = TRUE # call (FALSE) ou put (TRUE)
 
 up_and_down_moves = FALSE # u et d sont donnés (TRUE); FALSE sinon (ignore up et down)
-up = 1.3
-down = 0.8
+up = 1.4
+down = 0.4
 
 option <- binomopt(s = s0,
                    k = K,
@@ -180,7 +180,7 @@ option <- binomopt(s = s0,
                    up = up,
                    dn = down,
                    # ne pas toucher les autres arguments
-                   returntrees = TRUE, 
+                   returntrees = TRUE,
                    returnparams = TRUE,
                    returngreeks = TRUE)
 
@@ -192,44 +192,44 @@ option$stree # arbre de prix du s-jacent
 option$exertree # TRUE : exerce l'option
 option$deltatree # arbre des deltas
 option$bondtree # arbre de B
-
+option$exertree
 ## Graphique assopcié ----
 binomplotdc(s = s0,
-            k = K, 
-            v = sigma, 
-            r = rf, 
+            k = K,
+            v = sigma,
+            r = rf,
             tt = tt,
             nstep = nn,
-            d = delt, 
-            american = american_bool, 
+            d = delt,
+            american = american_bool,
             putopt = putopt_bool,
             specifyupdn = up_and_down_moves,
             up = up,
             dn = down,
             # ne pas toucher les autres arguments
             drawstrike = T,
-            plotvalues = T, 
+            plotvalues = T,
             plotarrows = F,
             ylimval = c(0.25 * s0, 1.75 * s0), # changer si besoin de plus d'espace sur le graph
-            pointsize = 0, 
+            pointsize = 0,
             titles = F)
 
 # Option (Call/Put) sur devises ----
-x0 = 0.92 # taux de change initial
+x0 = 120 # taux de change initial
 s0 = x0 # prix du s-jacent à t = 0 (DIFFÉRENCE)
-K = 0.85 # prix d'exercice (en devise domestique)
-sigma = 0.3 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Volatilité (sigma)"
-r_dom = 0.04 # taux d’intérêt domestique
+K = 120 # prix d'exercice (en devise domestique)
+sigma = 0.1 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Volatilité (sigma)"
+r_dom = 0.01 # taux d’intérêt domestique
 rf = r_dom # DIFFÉRENCE
-tt = 3/4 # maturité (T)
+tt = 1 # maturité (T)
 nn = 3 # nombre de pas (n)
 # rappel : h = T / n
-r_etr = 0.03 # taux d’intérêt étranger
+r_etr = 0.05 # taux d’intérêt étranger
 delt = r_etr # DIFFÉRENCE
-american_bool = TRUE # européen (FALSE) ou américain (TRUE)
+american_bool = FALSE # européen (FALSE) ou américain (TRUE)
 putopt_bool = FALSE # call (FALSE) ou put (TRUE)
 
-up_and_down_moves = TRUE # u et d sont donnés (TRUE) alors overwrite sigma; FALSE sinon (ignore up et down)
+up_and_down_moves = FALSE # u et d sont donnés (TRUE) alors overwrite sigma; FALSE sinon (ignore up et down)
 up = 1.2
 down = 0.9
 
@@ -246,7 +246,7 @@ option <- binomopt(s = s0,
                    up = up,
                    dn = down,
                    # ne pas toucher les autres arguments
-                   returntrees = TRUE, 
+                   returntrees = TRUE,
                    returnparams = TRUE,
                    returngreeks = TRUE)
 
@@ -263,34 +263,34 @@ option$bondtree # arbre de B
 
 ## Graphique assopcié ----
 binomplotdc(s = s0,
-            k = K, 
-            v = sigma, 
-            r = rf, 
+            k = K,
+            v = sigma,
+            r = rf,
             tt = tt,
             nstep = nn,
-            d = delt, 
-            american = american_bool, 
+            d = delt,
+            american = american_bool,
             putopt = putopt_bool,
             specifyupdn = up_and_down_moves,
             up = up,
             dn = down,
             # ne pas toucher les autres arguments
             drawstrike = T,
-            plotvalues = T, 
+            plotvalues = T,
             plotarrows = F,
             ylimval = c(0.5 * s0, 1.5 * s0), # changer si besoin de plus d'espace sur le graph
-            pointsize = 0, 
+            pointsize = 0,
             titles = F,
             devise = T) # DIFFÉRENCE
 
 # Option (Call/Put) sur futures ----
-F0t = 300 # prix future
+F0t = 1000 # prix future
 s0 = F0t # prix du s-jacent à t = 0 (DIFFÉRENCE)
-K = 290 # prix d'exercice (par défaut K = F0t)
-sigma = 0.1 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Volatilité (sigma)"
-rf = 0.06 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Taux sans risque (rf)"
+K = 1000 # prix d'exercice (par défaut K = F0t)
+sigma = 0.3 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Volatilité (sigma)"
+rf = 0.05 # fixé selon les informations ou trouvé dans "Obtention des paramètres: Taux sans risque (rf)"
 tt = 1 # maturité (T)
-nn = 1 # nombre de pas (n)
+nn = 3 # nombre de pas (n)
 # rappel : h = T / n
 delt = rf # dividend (DIFFÉRENCE)
 american_bool = FALSE # européen (FALSE) ou américain (TRUE)
@@ -315,7 +315,7 @@ option <- binomopt(s = s0,
                    up = up,
                    dn = down,
                    # ne pas toucher les autres arguments
-                   returntrees = TRUE, 
+                   returntrees = TRUE,
                    returnparams = TRUE,
                    returngreeks = TRUE)
 
@@ -326,31 +326,31 @@ option$oppricetree # arbre de prix de l'option
 option$stree # arbre de prix du s-jacent
 option$exertree # TRUE : exerce l'option
 
-# !!! les deux lignes suivantes ne fonctionnent pas; c'est logique quand on 
-# regarde les formules (voir les formules de la section 3.11 pour le calcul à la 
+# !!! les deux lignes suivantes ne fonctionnent pas; c'est logique quand on
+# regarde les formules (voir les formules de la section 3.11 pour le calcul à la
 # main)
 # option$deltatree # arbre des deltas
 # option$bondtree # arbre de B
 
 ## Graphique assopcié ----
 binomplotdc(s = s0,
-            k = K, 
-            v = sigma, 
-            r = rf, 
+            k = K,
+            v = sigma,
+            r = rf,
             tt = tt,
             nstep = nn,
-            d = delt, 
-            american = american_bool, 
+            d = delt,
+            american = american_bool,
             putopt = putopt_bool,
             specifyupdn = up_and_down_moves,
             up = up,
             dn = down,
             # ne pas toucher les autres arguments
             drawstrike = T,
-            plotvalues = T, 
+            plotvalues = T,
             plotarrows = F,
             ylimval = c(0.85 * s0, 1.15 * s0), # changer si besoin de plus d'espace sur le graph
-            pointsize = 0, 
+            pointsize = 0,
             titles = F)
 
 # Note : J'imagine qu'il existe une manière plus efficace d'ajuster ylimval (à revoir - pas si important)
