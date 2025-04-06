@@ -34,7 +34,7 @@ PleqK = pnorm(-d2)
 
 # valid
 # plnorm(q = K,
-#        meanlog = log(s0) + (alpha - delt - sigma^2/2) * tt, 
+#        meanlog = log(s0) + (alpha - delt - sigma^2/2) * tt,
 #        sdlog = sqrt(sigma^2 * tt)) # fonctionne
 
 # P[St >= K]
@@ -49,12 +49,12 @@ PgeqK = pnorm(d2)
 # Fonction quantile de St ----
 q_St = function(u, s0, alpha, delt, sigma, tt){
   # F_St (u)
-  
+
   mu = (alpha - delt - sigma^2/2) * tt
-  
+
   # output
   s0 * exp(mu + qnorm(u) * sigma * sqrt(tt))
-  
+
 }
 
 s0 = 40
@@ -67,7 +67,7 @@ q_St(u = 0.1,
      s0 = s0,
      alpha = alpha,
      delt = delt,
-     sigma = sigma, 
+     sigma = sigma,
      tt = tt)
 
 # valid
@@ -111,16 +111,16 @@ esp_cond_inf = esp_tronq_inf / pnorm(-d2)
 esp_cond_sup = esp_tronq_sup / pnorm(d2)
 
 # Option (Call/Put) ----
-# Note : les formules sont données pour une position longue. Pour une position 
+# Note : les formules sont données pour une position longue. Pour une position
 # courte (vendeur de l’option), on inverse le signe.
 
 ## avec ou sans dividendes continus ----
 s0 = 100
-K = 90
+K = 120
 sigma = 0.3
 alpha = r = 0.08 # environnement neutre au risque
-tt = 1
-delt = 0.05
+tt = 2
+delt = 0
 
 d1 = (log(s0 / K) + (alpha - delt + sigma^2/2) * tt)/(sigma * sqrt(tt))
 d2 = d1 - sigma * sqrt(tt)
@@ -227,7 +227,7 @@ put_gap = K * exp(-r * tt) * pnorm(-d2) - s0 * exp(-delt * tt) * pnorm(-d1)
 s_1 = 40
 s_2 = 30
 rho = 0.3
-sigma_1 = 0.3 
+sigma_1 = 0.3
 sigma_2 = 0.4
 tt = 1/2
 sigma = sqrt((sigma_1^2 + sigma_2^2 - 2 * rho * sigma_1 * sigma_2) / tt)
@@ -257,13 +257,13 @@ d2 = d1 - sigma * sqrt(tt)
 d1_prime = (log(s0 / K) + (alpha - delt + sigma^2/2) * tc)/(sigma * sqrt(tc)) # DIFFÉRENCE
 d2_prime = d1_prime - sigma * sqrt(tc)
 
-option_alternative = exp(-r * tt) * (s0 * exp(-delt * tt) * pnorm(d1) - 
+option_alternative = exp(-r * tt) * (s0 * exp(-delt * tt) * pnorm(d1) -
                                        K * exp(-r * tt) * pnorm(d2) +
                                        K * exp(-r * tt) * pnorm(-d2_prime) -
                                        s0 * exp(-delt * tt) * pnorm(-d1_prime))
 
 ## déclenchement différé ----
-# Note :  Le facteur exp(-r * td) dans les formules de pricing permet de 
+# Note :  Le facteur exp(-r * td) dans les formules de pricing permet de
 # considérer le fait que l'option devient active seulement à td.
 s0 = 40
 K = 40
@@ -305,7 +305,7 @@ s0 = 40
 K = 45
 sigma = 0.3
 alpha = r = 0.08
-tt = 1/2
+tt = 91/365
 delt = 0
 
 bsopt(s = s0,
@@ -316,38 +316,38 @@ bsopt(s = s0,
       d = delt)
 
 # Delta hedging ----
-# Note : La fonction est faite pour une option, mais si on doit faire le hedging pour 
-# une stratégie, on peut simplement utiliser la fonction sur chaque composante de 
-# la stratégie et agréger les résultats. Faire attention de bien spécifier si on 
+# Note : La fonction est faite pour une option, mais si on doit faire le hedging pour
+# une stratégie, on peut simplement utiliser la fonction sur chaque composante de
+# la stratégie et agréger les résultats. Faire attention de bien spécifier si on
 # achète ou on vend l'option dans une stratégie. Ex : Si on achète un bull(call, 40, 45),
-# alors, on achète le call(40), mais on vend le call(45) car 
+# alors, on achète le call(40), mais on vend le call(45) car
 # bull(call, 40, 45) = call(40) - call(45). Pour un exemple numérique, voir le
 # code : strategie_delta_hedging.R.
 
 delta_hedging = function(vend_bool, call_bool, n, s0, K, sigma, alpha, tt, delt){
 
   if (call_bool){
-    
+
     delta = data.frame(bsopt(s = s0,
                               k = K,
                               v = sigma,
                               r = alpha,
                               tt = tt,
                               d = delt)$Call)['Delta',]
-    
+
     transige_actions = n * (-1)^vend_bool * delta # potitif = on vend; négatif = on achète
-    
+
     inv_initial = -transige_actions * s0 # potitif = on paye; négatif = on reçoit
-    
+
     premium = data.frame(bsopt(s = s0,
                                k = K,
                                v = sigma,
                                r = alpha,
                                tt = tt,
                                d = delt)$Call)['Premium',]
-    
+
     transaction_option = (-1)^(vend_bool) * n * premium # potitif = on paye; négatif = on reçoit
-    
+
     if (inv_initial < 0 & transaction_option < 0){
       # entrée de fonds : on fait un prêt
       pret = -(inv_initial + transaction_option)
@@ -365,29 +365,29 @@ delta_hedging = function(vend_bool, call_bool, n, s0, K, sigma, alpha, tt, delt)
       pret =  (abs(inv_initial) < abs(transaction_option)) * (abs(transaction_option) - abs(inv_initial))
       emprunt = (abs(inv_initial) > abs(transaction_option)) * (abs(inv_initial) - abs(transaction_option))
     }
-    
+
   } else {
-    
+
     delta = data.frame(bsopt(s = s0,
                              k = K,
                              v = sigma,
                              r = alpha,
                              tt = tt,
                              d = delt)$Put)['Delta',]
-    
+
     transige_actions = n * (-1)^vend_bool * delta # positif = on achète; négatif = on vend
-    
+
     inv_initial = -transige_actions * s0 # potitif = on paye; négatif = on reçoit
-    
+
     premium = data.frame(bsopt(s = s0,
                                k = K,
                                v = sigma,
                                r = alpha,
                                tt = tt,
                                d = delt)$Put)['Premium',]
-    
+
     transaction_option = (-1)^(vend_bool) * n * premium # potitif = on paye; négatif = on reçoit
-    
+
     if (inv_initial < 0 & transaction_option < 0){
       # entrée de fonds : on fait un prêt
       pret = -(inv_initial + transaction_option)
@@ -405,29 +405,29 @@ delta_hedging = function(vend_bool, call_bool, n, s0, K, sigma, alpha, tt, delt)
       pret =  (abs(inv_initial) < abs(transaction_option)) * (abs(transaction_option) - abs(inv_initial))
       emprunt = (abs(inv_initial) > abs(transaction_option)) * (abs(inv_initial) - abs(transaction_option))
     }
-    
+
   }
-  
+
   # output
   list(delta_option = round(delta, 4),
        prix_option = round(premium, 4),
-       achat_ou_vente_action = paste0('On ', ifelse(transige_actions > 0, 'vend ', 'achète '), 
+       achat_ou_vente_action = paste0('On ', ifelse(transige_actions > 0, 'vend ', 'achète '),
                                       round(abs(transige_actions), 4), ' actions pour ', round(abs(inv_initial), 4), ' $.'),
-       achat_ou_vente_option = paste0('On ', ifelse(vend_bool, 'vend ', 'achète '), 
-                                      n, ifelse(call_bool, ' calls', ' puts'),' pour ', round(abs(transaction_option), 4), 
+       achat_ou_vente_option = paste0('On ', ifelse(vend_bool, 'vend ', 'achète '),
+                                      n, ifelse(call_bool, ' calls', ' puts'),' pour ', round(abs(transaction_option), 4),
                                       ' $.'),
        emprunt_ou_pret = paste0('On prête ', round(pret, 4), ' $ et on emprunte ', round(emprunt, 4), ' $.'))
-  
+
 }
 
 s0 = 40
-K = 45
+K = 40
 sigma = 0.3
 alpha = r = 0.08
 tt = 91/365
 delt = 0
 vend_bool = TRUE # vend (TRUE); achète (FALSE)
-call_bool = TRUE # call (TRUE); put (FALSE)
+call_bool = FALSE # call (TRUE); put (FALSE)
 n = 100 # l'option est sur combien d'actions
 
 delta_hedging(vend_bool = vend_bool,
