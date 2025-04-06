@@ -439,13 +439,3 @@ delta_hedging(vend_bool = vend_bool,
               alpha = alpha,
               tt = tt,
               delt = delt)
-
-
-
-
-
-
-
-
-
-
