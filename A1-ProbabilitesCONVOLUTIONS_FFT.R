@@ -111,6 +111,8 @@ panjer.nbinom1<-function(rr,qq,ff,smax)
 }
 
 
+# Lemme 2020 ----
+
 # X1 ~ BinComp(n = 6, q = 0.3) B1 ~ Exp(b1 = 0.12)
 # X2 ~ GeoComp(q = 0.4) B2 ~ Exp(b2 = 0.48)
 # S = X1 + X2, de façon exacte
@@ -122,14 +124,14 @@ bet1 <- 0.12
 q2 <- 0.4
 bet2 <- 0.48
 xx <- 0:(2^13 - 1)
-### K: binomiale composée avec loi de sévérité geo essais
+### K: binomiale composée avec loi de sévérité geo essais(qq)
 qq <- bet1 / bet2
 fb <- c(0, qq * (1 - qq)^(1:(2^13 - 1) - 1))
 fbt <- fft(fb)
 fkt <- ((1 - q1) + q1 * fbt)^n1
 fk <- Re(fft(fkt, inverse = TRUE)) / 2^13
 
-## Loi de L: convolution de K et M2 (m2 est une géo)
+## Loi de L: convolution de K et M2 (m2 est une géo(q2))
 
 fm2 <- dgeom(xx, q2)
 fm2t <- fft(fm2)
