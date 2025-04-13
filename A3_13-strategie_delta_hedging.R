@@ -1,3 +1,8 @@
+#### Examen synthèse Capstone
+#### Exemple d'application de la fonction delta_hedging sur des stratégies 
+#### (au lieu d'uniquement sur une option)
+#### 
+
 # stratégie 1 ----
 # on achète bull(call, 40, 45) = call(40) - call(45)
 s0 = 40

@@ -1,3 +1,7 @@
+#### Examen synthèse Capstone
+#### Exemple d'application de la fonction gamma_hedging sur des stratégies 
+#### 
+
 # détails sur l'objet "option_list_vector" ----
 # Il s'agit d'une liste composée de sous-listes, ou chaque sous-liste représente
 # une option de la stratégie qu'on souhaite Gamma hedger. Par exemple, si on
