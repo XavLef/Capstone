@@ -2,33 +2,47 @@
 ### A5.6 - Séries chronologiques
 ###
 
-library(forecast)
-library(datasets)
-library(fpp2)
-library(ggplot2)
-library(astsa)
-library(urca)
-library(tseries)
-library(hts)
-library(caschrono)
-library(seasonal)
-library(ggpubr)
+# Importation des paquetages ----
+liste.paquetage <- c("forecast",
+                     "datasets",
+                     "fpp2",
+                     "ggplot2",
+                     "astsa",
+                     "urca",
+                     "tseries",
+                     "hts",
+                     "seasonal",
+                     "ggpubr")
 
+inst <- liste.paquetage %in% installed.packages()
+if(length(liste.paquetage[!inst]) > 0){
+  install.packages(liste.paquetage[!inst])
+}
 
-### Importation de la série
+for (i in liste.paquetage){
+  suppressMessages((library(i, character.only = TRUE)))
+}
+
+# Package ‘caschrono’ was removed from the CRAN repository.
+# On l'installe manuellement au besoin (à partir des archives CRAN) :
+# install.packages("caschrono_2.4.tar.gz", repos = NULL, type = "source")
+# library(caschrono)
+
+# Importation de la série ----
 #Monthly Airline Passenger Numbers 1949-1960
-serie <- ts(AirPassengers, frequency = 12)
+serie <- ts(data = AirPassengers, 
+            frequency = 12)
 
 autoplot(serie)
+
 # Transformation box-cox (pas nécessaire si lambda près de 1)
 lam <- BoxCox.lambda(serie)
 
-
-flux <- BoxCox(serie, lambda = lam)
+flux <- BoxCox(serie, lambda = lam) # flux = ((sign(serie) * abs(serie)^lam) - 1) / lam
 
 BoxCox.lambda(flux)
 
-### Analyse exploratoire série chronologique
+# Analyse exploratoire série chronologique ----
 ## Graphe de la série
 (autoplot_serie <- autoplot(flux, col = "blue") + theme_bw() +
         xlab("Temps (mois)") +
@@ -39,9 +53,8 @@ BoxCox.lambda(flux)
 mois <- c("Janvier", "Frévier", "Mars", "Avril",
           "Mai", "Juin", "Juillet", "Août", "Septembre",
           "Octobre", "Novembre", "Décembre")
-(flux_subseries <- ggsubseriesplot(flux) + xlab("Mois") + ylab("Série")
-)
 
+(flux_subseries <- ggsubseriesplot(flux) + xlab("Mois") + ylab("Série"))
 
 ## Graphe de saisons
 (flux_seasonplot <- ggseasonplot(flux, season.labels = mois) + ggtitle("") +
@@ -57,6 +70,7 @@ mois <- c("Janvier", "Frévier", "Mars", "Avril",
              y = "Niveau de la série") +
         guides(colour = guide_legend(title = "Mois")))
 
+## Décomposition ----
 ## Décomposition classique
 (flux_decompclassique <- autoplot(decompose(flux, type = c("additive"))) +
         xlab("Temps (mois)") + ggtitle(""))
@@ -64,17 +78,16 @@ mois <- c("Janvier", "Frévier", "Mars", "Avril",
 ## Décomposition STL
 (flux_stl <- flux %>% stl(s.window = 1, t.window = 13, robust = TRUE) %>%
         autoplot() + xlab("Temps (mois)"))
+
 flux %>% stl(s.window = 12, t.window = 1, robust = TRUE) %>% seasonal %>% autoplot()
 flux %>% stl(s.window = 12, t.window = 1, robust = TRUE) %>% trendcycle %>% autoplot()
 flux %>% stl(s.window = 12, t.window = 1, robust = TRUE) %>% remainder %>% autoplot()
 flux %>% stl(s.window = 12, t.window = 1, robust = TRUE) %>% seasadj %>% autoplot()
 
-
-### Méthodes de prévision
+# Méthodes de prévision ----
 ## Séparation train-test (jouer sur end et start pour la taille voulue)
-flux.train <- window(flux, end=c(10,12))
-flux.test <- window(flux, start=c(11, 1))
-
+flux.train <- window(flux, end=c(10,12)) # end = c(année, mois)
+flux.test <- window(flux, start=c(11, 1)) # start = c(année, mois)
 
 ## Méthodes de base
 naivess_flux <- flux.train %>% snaive(h = 24, lambda = lam)
@@ -90,7 +103,6 @@ derive_flux <- flux.train %>% snaive(drift = TRUE, h = 24, lambda = lam)
 flux %>% snaive(drift = TRUE, lambda = lam) %>% checkresiduals
 
 ## Lissage exponentiel
-
 ses(flux, h = 24, lambda = lam)
 hw_flux <- hw(flux.train, h = 24, seasonal = "multiplicative", damped = TRUE)
 autoplot(flux.test) + autolayer(hw_flux, PI = F)
@@ -123,8 +135,7 @@ mod_ets$model$aic
 mod_ets$model$bic
 
 
-## Modèles Box et Jenkins (SARIMA)
-
+# Modèles Box et Jenkins (SARIMA) ----
 # Analyse initiale de la stationnarité
 autoplot(flux.train)
 flux.train %>% ggtsdisplay()
@@ -149,7 +160,6 @@ D2autoplotcorr <- Dflux2 %>% ggtsdisplay()
 ## Validation de la stationnarité
 kpss.test(Dflux) # H0 :  la série est stationnaire
 adf.test(Dflux) # H0: non stationnaire
-
 
 # Itération du modèle SARIMA
 (fitAA <- Arima(flux.train,  # série
