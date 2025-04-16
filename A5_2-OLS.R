@@ -197,6 +197,7 @@ drop1(modele, test = "F") # important de mettre argument test
 
 
 # Sélection de variables ----
+## basée sur des métriques
 tous <- regsubsets(formula(modele), data = data, nvmax = 16, nbest = 1) # pkg leaps
 
 tous.summary <- summary(tous)
@@ -207,3 +208,19 @@ Criteres <- data.frame(npar, Rcarre = tous.summary$rsq,
                        BIC = tous.summary$bic,
                        AIC = tous.summary$bic +npar*(1-log(nrow(Credit))))
 round(Criteres, 3)
+
+## stepwise (forward, backward ou pas-à-pas)
+(mod.stepwise <- step(modele, direction = "both", trace = 0))
+
+summary(mod.stepwise)
+
+# on peut aussi utiliser regsubsets
+regfit.fwd <- regsubsets(formula(modele), data = data,
+                         nvmax = 19, method = "forward")
+
+summary(regfit.fwd)
+coef(regfit.fwd, 4)
+
+regfit.bwd <- regsubsets(formula(modele), data = data ,
+                         nvmax = 19, method = "backward")
+coef(regfit.bwd, 4)
