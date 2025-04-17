@@ -43,9 +43,9 @@ str(data)
 ## Train-Test ----
 # ici 70-30
 set.seed(199000)
-test.indices <- sample(1:nrow(usexpense),0.3*nrow(usexpense))
-train <- usexpense[-test.indices,]
-test <- usexpense[test.indices,]
+test.indices <- sample(1:nrow(data),0.3*nrow(data))
+train <- data[-test.indices,]
+test <- data[test.indices,]
 
 
 ## model.matrix ----
