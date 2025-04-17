@@ -1,6 +1,6 @@
 #### Examen synthèse Capstone
 ### A5.2 - Modèles linéaires généralisés
-### Régression linéaire (simple et multiple)
+### Régression Ridge et LASSO
 ###
 
 # Paquetages ----
