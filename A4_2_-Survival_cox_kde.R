@@ -50,14 +50,26 @@ fit_km_tunc_cens <- survfit(surv_lt ~1, data = data_sim)
 fit_km <- survfit(surv_obj ~ 1, data = lung)
 summary_fit <- summary(fit_km_tunc_cens)
 summary(fit_km)
-
+plot(fit_km)
 ggsurvplot(fit_km_tunc_cens, title = "Kaplan-Meier", conf.int = TRUE)
 ggsurvplot(fit_km, title = "Kaplan-Meier", conf.int = TRUE)
+
+fit_sex <- survfit(surv_obj ~ sex, data = lung) # Une courbe par sexe
+plot(fit_sex, xlab = "Months",
+     ylab = "Esimtated probability of survival", col = c(2, 4))
+legend("bottomleft", levels(factor(lung$sex)), col = c(2, 4), lty = 1)
 
 # survie à un point précis:
 S_hat <- summary_fit$surv
 summary(fit_km_tunc_cens, times = 15.2) # pour évaluer en un point précis
 var_greenwood <- summary_fit$std.err^2
+
+
+# Log-rank test to compare survival of males to females
+attach(lung)
+logrank.test <- survdiff(Surv(time, status) ~ sex)
+logrank.test
+# H0: il n'y a pas de différence significative entre les deux fct de survie (par sexe)
 
 ## Méthode Delta:
 g_prime <- 1 / (S_hat * log(S_hat))
@@ -95,11 +107,11 @@ var_survie <- exp(-naest1)^2 * var_naa
 # https://www.sthda.com/english/wiki/cox-proportional-hazards-model
 data("lung")
 
-res.cox <- coxph(Surv(time, status) ~ sex, data = lung)
+res.cox <- coxph(Surv(time, status) ~ factor(sex), data = lung)
 res.cox
 
 summary(res.cox)
-
+## Le sexe 2 a exp(-0.5310) plus de risques de survie que le sexe 1.
 
 res.cox <- coxph(Surv(time, status) ~ age + sex + ph.ecog, data =  lung)
 summary(res.cox)
@@ -120,7 +132,9 @@ fit <- survfit(res.cox, newdata = sex_df)
 ggsurvplot(fit, conf.int = TRUE, legend.labs=c("Sex=1", "Sex=2"),
            ggtheme = theme_minimal(), data = sex_df)
 
-
+plot(fit, xlab = "Months",
+     ylab = "Survival Probability", col = 2:5)
+legend("bottomleft", levels(factor(sex)), col = 2:5, lty =1)
 # vérification des postulats
 
 test.ph <- cox.zph(res.cox)
