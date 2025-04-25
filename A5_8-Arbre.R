@@ -41,7 +41,7 @@ gamma_loss = function(data, lev = NULL, model = NULL){
 
 }
 
-dev_poisson <- function(data, lev = NULL, model = NULL){
+poisson_loss <- function(data, lev = NULL, model = NULL){
     # Note : c'est la moyenne des déviances Poisson pour chacune des observations
     # obs : vraies valeurs de la variable réponse
     # pred : prévisions du modèle (DOIVENT TENIR COMPTE DE L'EXPOSITION)

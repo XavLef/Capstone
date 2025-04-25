@@ -13,18 +13,50 @@ dev_gamma = function(obs, pred){
   # Note : c'est la moyenne des déviances gamma pour chacune des observations
   # obs : vraies valeurs de la variable réponse
   # pred : prévisions du modèle
-  
+
   2 * sum(-log(obs/pred) + (obs - pred)/pred) / length(obs)
-  
+
 }
+
+
+dev_poisson <- function(obs, pred){
+    # Note : c'est la moyenne des déviances Poisson pour chacune des observations
+    # obs : vraies valeurs de la variable réponse
+    # pred : prévisions du modèle (DOIVENT TENIR COMPTE DE L'EXPOSITION)
+    dev_one <- function(pred, obs)
+    {
+        ifelse(obs == 0, 2 * sum(- obs + (pred)),
+               2*sum(obs * log(obs / (pred)) - (obs - (pred))))
+    }
+
+    mean(sapply(1:length(pred), function(i) dev_one(pred[i], obs[i])))
+}
+
 
 # À utiliser dans caret via l'argument summaryFunction
 gamma_loss = function(data, lev = NULL, model = NULL){
-  
+
   dev = -2 * sum(-log(data$obs/data$pred) + (data$obs - data$pred)/data$pred)
   names(dev) = 'gamma_loss'
   dev
-  
+
+}
+
+
+poisson_loss <- function(data, lev = NULL, model = NULL){
+    # Note : c'est la moyenne des déviances Poisson pour chacune des observations
+    # obs : vraies valeurs de la variable réponse
+    # pred : prévisions du modèle (DOIVENT TENIR COMPTE DE L'EXPOSITION)
+    dev_one <- function(pred, obs)
+    {
+        ifelse(data$obs == 0, 2 * sum(- data$obs + (data$pred)),
+               2*sum(data$obs * log(data$obs / (data$pred)) - (data$obs - (data$pred))))
+    }
+
+    dev <- -2 * sum(sapply(1:nrow(data$pred),
+                           function(i) dev_one(data$pred[i], data$obs[i])))
+    names(dev) <- 'poisson_loss'
+    dev
 }
 
 # Importation des paquetages ----
@@ -43,11 +75,11 @@ for (i in liste.paquetage){
   suppressMessages((library(i, character.only = TRUE)))
 }
 
-# Note : Pour le bagging, simplement mettre selected_sampsize = 1 et 
+# Note : Pour le bagging, simplement mettre selected_sampsize = 1 et
 #        mtry = ncol(train_data) - 1
 
 # CLassification ----
-dat.compl <- read.csv("heart_dataset.csv", stringsAsFactors = TRUE)
+dat.compl <- read.csv("data/heart_dataset.csv", stringsAsFactors = TRUE)
 str(dat.compl)
 
 ## split ----
@@ -95,27 +127,27 @@ auc_temp = mtry_mat = nodesize_mat = numeric(length(seq_mtry) *
 
 i = 0
 for (mtry_val in seq_mtry){
-  
+
   for (nodesize_val in seq_nodesize){
-      
+
       i = i + 1
-      
+
       foret <- randomForest(target~.,
                             data = non.valid_data,
                             mtry = mtry_val,
                             sampsize = floor(selected_sampsize*nrow(non.valid_data)),
                             ntree = B,
                             nodesize = nodesize_val)
-      
+
       # prévisions en validation
       pred = predict(foret, newdata=valid_data, type="prob")
       foret.res <- roc(valid_data$target, pred[,2], auc=TRUE, plot=TRUE)
-      
+
       # note le résultat
       auc_temp[i] = foret.res$auc
       mtry_mat[i] = mtry_val
       nodesize_mat[i] = nodesize_val
-      
+
       print(paste0('Progression : ', round(i/length(auc_temp), 4) * 100, ' %'))
 
   }
@@ -162,7 +194,7 @@ data = pg15training # copie dataset
 str(data)
 
 ##  feature engineering (si applicable) ----
-data_sev = data %>%  
+data_sev = data %>%
   dplyr::filter(Indtppd > 0) %>% # filtre sur la condition d'avoir au moins une réclamation pour des dommages matériels
   dplyr::mutate(Severity = Indtppd/Numtppd) %>% # crée la variable de sévérité
   dplyr::select(!c(PolNum, Exppdays, Numtpbi, Numtppd, Indtpbi, Indtppd, SubGroup2)) # retrait des variables sans intérêt
@@ -216,29 +248,29 @@ rmse_temp = mtry_mat = nodesize_mat = numeric(length(seq_mtry) *
 
 i = 0
 for (mtry_val in seq_mtry){
-  
+
   for (nodesize_val in seq_nodesize){
-    
+
     i = i + 1
-    
+
     foret <- randomForest(Severity~.,
                           data = non.valid_data,
                           mtry = mtry_val,
                           sampsize = floor(selected_sampsize*nrow(non.valid_data)),
                           ntree = B,
                           nodesize = nodesize_val)
-    
+
     # prévisions en validation
     pred = predict(foret, newdata=valid_data %>% dplyr::select(-Severity), type="response")
     foret.res <- sqrt(mean((pred - valid_data$Severity)^2)) # RMSE
-    
+
     # note le résultat
     rmse_temp[i] = foret.res
     mtry_mat[i] = mtry_val
     nodesize_mat[i] = nodesize_val
-    
+
     print(paste0('Progression : ', round(i/length(rmse_temp), 4) * 100, ' %'))
-    
+
   }
 }
 
@@ -287,7 +319,7 @@ data = pg15training # copie dataset
 str(data)
 
 ##  feature engineering (si applicable) ----
-data_sev = data %>%  
+data_sev = data %>%
   dplyr::filter(Indtppd > 0) %>% # filtre sur la condition d'avoir au moins une réclamation pour des dommages matériels
   dplyr::mutate(Severity = Indtppd/Numtppd) %>% # crée la variable de sévérité
   dplyr::select(!c(PolNum, Exppdays, Numtpbi, Numtppd, Indtpbi, Indtppd, SubGroup2)) # retrait des variables sans intérêt
@@ -353,23 +385,24 @@ seq_depth = seq(3, 5)
 dev_gamma_temp = mtry_mat = nodesize_mat = depth_mat = numeric(length(seq_mtry) *
                                                                  length(seq_nodesize) *
                                                                  length(seq_depth))
+subsample <- 0.75
 
 i = 0
 for (mtry_val in seq_mtry){
-  
+
   for (nodesize_val in seq_nodesize){
-    
+
     for (depth_val in seq_depth){
-      
+
       i = i + 1
-      
+
       controles = rpart.control(cp = 0,
                                 maxsurrogate = 3,
                                 usesurrogate = 2,
                                 xval = 0,
                                 maxdepth = depth_val,
                                 minbucket = nodesize_val)
-      
+
       foret_valid = rforest(Severity~.,
                             data = non.valid_data,
                             method = 'gamma',
@@ -377,18 +410,18 @@ for (mtry_val in seq_mtry){
                             control = controles,
                             ntrees = B,
                             subsample = subsample)
-      
+
       # prévisions en validation
       pred = predict.rforest(foret_valid, newdata = valid_data)
-      
+
       # note le résultat
       dev_gamma_temp[i] = dev_gamma(valid_data$Severity, pred)
       mtry_mat[i] = mtry_val
       nodesize_mat[i] = nodesize_val
       depth_mat[i] = depth_val
-      
+
       print(paste0('Progression : ', round(i/length(dev_gamma_temp), 4) * 100, ' %'))
-      
+
     }
   }
 }
@@ -439,13 +472,10 @@ list(hyperparametres = list(mtry = mtry_optim,
      deviance = dev_foret)
 
 ## importance des variables ----
-varImpPlot(foret_optim)
+imp <- importance_rforest(foret_optim)
+imp$variable <- factor(imp$variable, levels = rev(imp$variable)) # pour ordre décroissant
+sum(imp$scale_sum) # importance normalisée
 
-
-
-
-
-
-
-
-
+ggplot(imp, aes(x = variable, y = scale_sum)) + geom_col(fill = "forestgreen") + coord_flip() +
+    theme_minimal() + labs(title = "Importance des variables",
+                           x = "Variable", "Importance")
