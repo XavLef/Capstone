@@ -220,3 +220,6 @@ Acf(resid(mod.auto_garch)^2) # Maintenant variance ok
 
 ## Ne sera utile qu'en simulation pour le paramètre de vairance du rnorm (bruit blanc)
 ## à utiliser dans la simulation du processus sous-jacent.
+
+
+
