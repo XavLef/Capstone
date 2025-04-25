@@ -74,6 +74,7 @@ ggplot() + geom_point(aes(composante1, composante2, color = groupe)) + theme_min
 # K-médoïdes -----
 ## Fournir une matrice de dissimilarité à pam
 K <- 4
+set.seed(38234)
 kmedoids <- pam(daisy(data, type = list(asymm = "a_tubercule")), K, diss = TRUE)
 names(kmedoids)
 
@@ -139,6 +140,25 @@ factoextra::fviz_nbclust(x = boston_scaled, FUNcluster = kmeans,
 factoextra::fviz_nbclust(x = boston_scaled, FUNcluster = kmeans,
                          method = "wss",
                          k.max = 10)
+
+
+tot_within <- rep(NA, 10)
+
+set.seed(202445)
+for (k in 1:10) {
+    k_m <- kmeans(boston_scaled, k, nstart = 15)
+    tot_within[k] <- k_m$tot.withinss
+}
+
+tot_within
+
+## Par la méthode du coude, on choisit le nombre de regroupements qui
+## fait un coude. C'est le point qui sort des lignes droites qu'on pourrait
+## tracer entre deux points consécutifs.
+
+plot(1:10, tot_within, main = "Diagramme d'éboulis",
+     xlab = "Nombre de groupes", ylab = "Variance intra-groupe totale")
+
 
 ## Statistique GAP ----
 clust_gap <- cluster::clusGap(boston_scaled, FUN = kmeans,
