@@ -13,18 +13,48 @@ dev_gamma = function(obs, pred){
   # Note : c'est la moyenne des déviances gamma pour chacune des observations
   # obs : vraies valeurs de la variable réponse
   # pred : prévisions du modèle
-  
+
   2 * sum(-log(obs/pred) + (obs - pred)/pred) / length(obs)
-  
+
 }
+
+dev_poisson <- function(obs, pred){
+    # Note : c'est la moyenne des déviances Poisson pour chacune des observations
+    # obs : vraies valeurs de la variable réponse
+    # pred : prévisions du modèle (DOIVENT TENIR COMPTE DE L'EXPOSITION)
+    dev_one <- function(pred, obs)
+    {
+        ifelse(obs == 0, 2 * sum(- obs + (pred)),
+               2*sum(obs * log(obs / (pred)) - (obs - (pred))))
+    }
+
+    mean(sapply(1:length(pred), function(i) dev_one(pred[i], obs[i])))
+}
+
 
 # À utiliser dans caret via l'argument summaryFunction
 gamma_loss = function(data, lev = NULL, model = NULL){
-  
+
   dev = -2 * sum(-log(data$obs/data$pred) + (data$obs - data$pred)/data$pred)
   names(dev) = 'gamma_loss'
   dev
-  
+
+}
+
+dev_poisson <- function(data, lev = NULL, model = NULL){
+    # Note : c'est la moyenne des déviances Poisson pour chacune des observations
+    # obs : vraies valeurs de la variable réponse
+    # pred : prévisions du modèle (DOIVENT TENIR COMPTE DE L'EXPOSITION)
+    dev_one <- function(pred, obs)
+    {
+        ifelse(data$obs == 0, 2 * sum(- data$obs + (data$pred)),
+               2*sum(data$obs * log(data$obs / (data$pred)) - (data$obs - (data$pred))))
+    }
+
+    dev <- -2 * sum(sapply(1:nrow(data$pred),
+                           function(i) dev_one(data$pred[i], data$obs[i])))
+    names(dev) <- 'poisson_loss'
+    dev
 }
 
 # Importation des paquetages ----
@@ -46,7 +76,7 @@ for (i in liste.paquetage){
 }
 
 # Classification ----
-raw_data <- read.csv("HomeCredit_simplifie.csv", stringsAsFactors = TRUE)
+raw_data <- read.csv("data/HomeCredit_simplifie.csv", stringsAsFactors = TRUE)
 str(raw_data)
 
 ## feature engineering (si applicable) ----
@@ -69,10 +99,10 @@ test_data <- raw_data[-train_ind, ]
 ## entrainement ----
 ### avec avec le paramètre de complexité ----
 tree.control <- rpart::rpart.control(cp=0.0,
-                                     minsplit=1, 
+                                     minsplit=1,
                                      minbucket=1) # overfit l'arbre au maximum
 
-arbre <- rpart::rpart(TARGET~., 
+arbre <- rpart::rpart(TARGET~.,
                       data=train_data,
                       method="class",
                       control=tree.control)
@@ -82,8 +112,8 @@ cp_optim = arbre$cptable[which.min(arbre$cptable[,4]), 1] # meilleur cp
 arbre_elag = rpart::prune(arbre, cp = cp_optim) # élagage
 rpart.plot(arbre_elag, fallen.leaves = T, type = 5)
 
-pred = predict(arbre_elag, 
-               newdata = test_data %>% dplyr::select(-TARGET), 
+pred = predict(arbre_elag,
+               newdata = test_data %>% dplyr::select(-TARGET),
                type = 'class')
 
 summary(pred)
@@ -92,7 +122,7 @@ summary(pred)
 # Validation croisée ordinaire avec : method = "cv" et number = nb_plis
 
 #### recherche en grille ----
-fit.control_holdout <- trainControl(method = "LGOCV", 
+fit.control_holdout <- trainControl(method = "LGOCV",
                                     p = 0.8, # 20 % en validation
                                     number = 1, # holdout
                                     summaryFunction = twoClassSummary,
@@ -112,8 +142,8 @@ cv.fitted.tree_holdout$bestTune
 #### valeurs spécifiées ----
 cp_grid <- expand.grid(cp = c(0.005, 0.007, 0.01))
 
-fit.control_holdout <- trainControl(method = "LGOCV", 
-                                    p = 0.8, 
+fit.control_holdout <- trainControl(method = "LGOCV",
+                                    p = 0.8,
                                     number = 1,
                                     summaryFunction = twoClassSummary,
                                     classProbs=TRUE)
@@ -143,10 +173,11 @@ data = pg15training # copie dataset
 str(data)
 
 ##  feature engineering (si applicable) ----
-data_sev = data %>%  
+data_sev = data %>%
   dplyr::filter(Indtppd > 0) %>% # filtre sur la condition d'avoir au moins une réclamation pour des dommages matériels
   dplyr::mutate(Severity = Indtppd/Numtppd) %>% # crée la variable de sévérité
-  dplyr::select(!c(PolNum, Exppdays, Numtpbi, Numtppd, Indtpbi, Indtppd)) # retrait des variables sans intérêt
+  dplyr::select(!c(PolNum, Exppdays, Numtpbi, Numtppd, Indtpbi, Indtppd,
+                   SubGroup2)) # retrait des variables sans intérêt
 
 ## split ----
 set.seed(123)
@@ -159,13 +190,13 @@ test_data <- data_sev[-train_ind, ]
 
 ## entrainement ----
 ### avec avec le paramètre de complexité ----
-tree.control <- rpart::rpart.control(cp=0.0, 
-                                     minsplit=1, 
+tree.control <- rpart::rpart.control(cp=0.0,
+                                     minsplit=1,
                                      minbucket=1) # overfit l'arbre au maximum
 
-arbre <- rpart::rpart(Severity~., 
+arbre <- rpart::rpart(Severity~.,
                       data=train_data,
-                      method = "anova", 
+                      method = "anova",
                       control=tree.control)
 
 plotcp(arbre)
@@ -173,8 +204,8 @@ cp_optim = arbre$cptable[which.min(arbre$cptable[,4]), 1] # meilleur cp
 arbre_elag = rpart::prune(arbre, cp = cp_optim) # élagage
 rpart.plot(arbre_elag, fallen.leaves = T, type = 5)
 
-pred = predict(arbre_elag, 
-               newdata = test_data %>% dplyr::select(-Severity), 
+pred = predict(arbre_elag,
+               newdata = test_data %>% dplyr::select(-Severity),
                type = 'vector')
 
 summary(pred)
@@ -183,7 +214,7 @@ summary(pred)
 # Validation croisée ordinaire avec : method = "cv" et number = nb_plis
 
 #### recherche en grille ----
-fit.control_holdout <- trainControl(method = "LGOCV", 
+fit.control_holdout <- trainControl(method = "LGOCV",
                                     p = 0.8, # 20 % en validation
                                     number = 1, # holdout
                                     search="grid")
@@ -201,8 +232,8 @@ cv.fitted.tree_holdout$bestTune
 #### valeurs spécifiées ----
 cp_grid <- expand.grid(cp = c(0.005, 0.007, 0.01))
 
-fit.control_holdout <- trainControl(method = "LGOCV", 
-                                    p = 0.8, 
+fit.control_holdout <- trainControl(method = "LGOCV",
+                                    p = 0.8,
                                     number = 1)
 
 cv.fitted.tree_holdout <- caret::train(Severity~.,
@@ -230,10 +261,11 @@ data = pg15training # copie dataset
 str(data)
 
 ##  feature engineering (si applicable) ----
-data_sev = data %>%  
+data_sev = data %>%
   dplyr::filter(Indtppd > 0) %>% # filtre sur la condition d'avoir au moins une réclamation pour des dommages matériels
   dplyr::mutate(Severity = Indtppd/Numtppd) %>% # crée la variable de sévérité
-  dplyr::select(!c(PolNum, Exppdays, Numtpbi, Numtppd, Indtpbi, Indtppd)) # retrait des variables sans intérêt
+  dplyr::select(!c(PolNum, Exppdays, Numtpbi, Numtppd, Indtpbi, Indtppd,
+                   SubGroup2)) # retrait des variables sans intérêt
 
 ## split ----
 set.seed(123)
@@ -282,3 +314,4 @@ summary(pred)
 
 # calcul de déviance
 dev_arbre_gamma <- dev_gamma(test_data$Severity, pred) # similaire à l'arbre normal
+MetricsWeighted::deviance_gamma(test_data$Severity, pred)
