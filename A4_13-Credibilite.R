@@ -22,10 +22,10 @@ full_cred = ceiling((qnorm((1 + p) / 2) / k)^2 * (varX / (espX^2 * theta) +
 
 ## poisson composée ou poisson pure ----
 # Note : varX = 0 dans le cas d'une poisson pure
-espX = 1/2
+espX = 15000
 varX = 0
-k = 0.03 # ordre
-p = 0.975 # ordre
+k = 0.05 # ordre
+p = 0.95 # ordre
 
 full_cred = ceiling((qnorm((1 + p) / 2) / k)^2 * (1 + varX / espX^2))
 

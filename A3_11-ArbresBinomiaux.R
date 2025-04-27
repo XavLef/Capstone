@@ -194,6 +194,7 @@ option$exertree # TRUE : exerce l'option
 option$deltatree # arbre des deltas
 option$bondtree # arbre de B
 option$exertree
+
 ## Graphique assopcié ----
 binomplotdc(s = s0,
             k = K,
@@ -355,3 +356,9 @@ binomplotdc(s = s0,
             titles = F)
 
 # Note : J'imagine qu'il existe une manière plus efficace d'ajuster ylimval (à revoir - pas si important)
+
+
+
+
+
+
