@@ -128,7 +128,7 @@ d2 = d1 - sigma * sqrt(tt)
 call_div_cont = s0 * exp(-delt * tt) * pnorm(d1) - K * exp(-r * tt) * pnorm(d2)
 
 put_div_cont = K * exp(-r * tt) * pnorm(-d2) - s0 * exp(-delt * tt) * pnorm(-d1)
-
+bsopt(s0, K, sigma, r, tt, delt)
 ## avec dividendes discrets proportionnels ----
 n = 1 # nombre de dividendes versé d'ici T
 s0 = 50
@@ -144,6 +144,7 @@ d2 = d1 - sigma * sqrt(tt)
 call_div_disc_prop = s0 * (1 - delt)^n * pnorm(d1) - K * exp(-r * tt) * pnorm(d2)
 
 put_div_disc_prop  = K * exp(-r * tt) * pnorm(-d2) - s0 * (1 - delt)^n * pnorm(-d1)
+### Ne pas utilier bsopt ici, car pas pas dividendes continus
 
 ## avec dividendes discrets fixes ----
 dt = c(2) # vecteur des dividendes versés à des moments connus d’avances avant T
@@ -162,6 +163,7 @@ d2 = d1 - sigma * sqrt(tt)
 call_div_disc_fix = (s0 - sum(dt * exp(-r * temps))) * pnorm(d1) - K * exp(-r * tt) * pnorm(d2)
 
 put_div_disc_fix  = K * exp(-r * tt) * pnorm(-d2) - (s0 - sum(dt * exp(-r * temps))) * pnorm(-d1)
+### Ne pas utilier bsopt ici, car pas pas dividendes continus
 
 ## sur devises ----
 # Note : Si l'option est libellée en W, alors W est le taux domestique (r_dom).
@@ -181,7 +183,7 @@ d2 = d1 - sigma * sqrt(tt)
 call_devise = s0 * exp(-delt * tt) * pnorm(d1) - K * exp(-r * tt) * pnorm(d2)
 
 put_devise = K * exp(-r * tt) * pnorm(-d2) - s0 * exp(-delt * tt) * pnorm(-d1)
-
+bsopt(x0, K, sigma, r_dom, tt, r_etr)
 ## sur futures ----
 tt_prime = 1 # l’échéance du futures (tt_prime >= tt) (DIFFÉRENCE)
 ss = 100 # DIFFÉRENCE
@@ -204,7 +206,7 @@ d2 = d1 - sigma * sqrt(tt)
 call_future = Fot_s * exp(-r * tt) * pnorm(d1) - K * exp(-r * tt) * pnorm(d2)
 
 put_div_cont = K * exp(-r * tt) * pnorm(-d2) - Fot_s * exp(-r * tt) * pnorm(-d1)
-
+bsopt(Fot_s, K, sigma, r, tt, delt)
 ## gap ----
 # Note : Si K = H, c'est une option ordinaire.
 s0 = 40

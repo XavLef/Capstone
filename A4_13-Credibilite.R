@@ -144,4 +144,7 @@ fit.B = cm(~ contract, # pour chaque contrat (ligne)
            ratios = ratio.1:ratio.6,
            weights = weight.1:weight.6) # tenir compte des volumes
 
-summary(fit.B)
+summary(fit.B) #### utilise la prime collective X_{zw} alors que la loss models utilise X_{ww}
+
+### Au besoin, corriger avec
+#xx$means$contract * xx$cred[[1]] + (1 - xx$cred[[1]]) * X_{ww}

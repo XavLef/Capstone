@@ -188,6 +188,7 @@ option <- binomopt(s = s0,
 option$price # prix de l'option
 option$params["up"] # u
 option$params["dn"] # d
+option$params["p"] # probabilité risque-neutre augmentation
 option$oppricetree # arbre de prix de l'option
 option$stree # arbre de prix du s-jacent
 option$exertree # TRUE : exerce l'option
@@ -295,7 +296,7 @@ nn = 3 # nombre de pas (n)
 # rappel : h = T / n
 delt = rf # dividend (DIFFÉRENCE)
 american_bool = FALSE # européen (FALSE) ou américain (TRUE)
-putopt_bool = FALSE # call (FALSE) ou put (TRUE)
+putopt_bool = TRUE # call (FALSE) ou put (TRUE)
 
 CRR = TRUE # Cox-Ross-Rubinstein tree (DIFFÉRENCE)
 up_and_down_moves = FALSE # u et d sont donnés (TRUE); FALSE sinon (ignore up et down)
@@ -326,12 +327,13 @@ option$params["dn"] # d
 option$oppricetree # arbre de prix de l'option
 option$stree # arbre de prix du s-jacent
 option$exertree # TRUE : exerce l'option
+option$probtree
 
 # !!! les deux lignes suivantes ne fonctionnent pas; c'est logique quand on
 # regarde les formules (voir les formules de la section 3.11 pour le calcul à la
 # main)
-# option$deltatree # arbre des deltas
-# option$bondtree # arbre de B
+#option$deltatree # arbre des deltas
+#option$bondtree # arbre de B
 
 ## Graphique assopcié ----
 binomplotdc(s = s0,
