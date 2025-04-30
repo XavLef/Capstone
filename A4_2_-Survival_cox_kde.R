@@ -1,22 +1,25 @@
 ### Capstone
 ## A4.2 - Esimtateurs de fonction de survie
 
-library(survival)
-library(survminer)
-library(KernSmooth)
-library(muhaz)
-library(km.ci)
-library(mice)
+liste.paquetage <- c("survival", "survminer", "KernSmooth",
+                     "muhaz", "km.ci", "mice")
 
-data(lung)
+inst <- liste.paquetage %in% installed.packages()
+if(length(liste.paquetage[!inst]) > 0){
+  install.packages(liste.paquetage[!inst])
+}
+
+for (i in liste.paquetage){
+  suppressMessages((library(i, character.only = TRUE)))
+}
+
+# data(lung)
 lung <- na.omit(lung)
 # dans le jeu de données:
 # - time: survival time in days
 # - status: censoring? 1 = censored, 2 = dead
 # - Age in years
 # - sex, male = 1
-
-
 
 # Simuler toy dataset
 set.seed(223)
@@ -193,4 +196,49 @@ density_grouped <- density(midpoints,
 
 plot(density_grouped$x, density_grouped$y, type="l", col="red", lwd=2,
      xlab="Time", ylab="Density", main="Kernel Density Estimate (Grouped Data)")
+
+
+# Nelson-Aalen ----
+time <- c(500, 800, 1200, 1700) # y_j (événements : montant ou temps)
+event <- c(3, 10, 11, 2) # s_j (nb. événements)
+riskset <- c(52, 40, 19, 6) # r_j (nb. pers. dans l'échantillon)
+
+## Estimation du cumulative hazard ----
+h_increment <- event / riskset
+
+H_hat <- cbind(time, H_time = cumsum(h_increment))
+
+## Survie ----
+S_hat <- cbind(time, S_time = exp(-H_hat[,2]))
+
+# Kaplan-Maier ----
+time <- c(300, 500, 700, 900, 1200, 1300, 1400) # y_j (événements : montant ou temps)
+event <- c(1, 1, 2, 1, 1, 1, 1) # s_j (nb. événements)
+riskset <- c(6, 5, 9, 7, 3, 2, 1) # r_j (nb. pers. dans l'échantillon)
+
+## Survie ----
+S_hat <- cbind(time, S_time = cumprod(1 - event / riskset))
+
+## Corrections ----
+y_max = 50
+gamma_cor = 60
+
+### Effron ----
+S_hat_correct = rbind(S_hat,
+                      c(y_max, 0))
+
+### Klein et Moeschberger ----
+S_hat_correct = rbind(S_hat,
+                      c(y_max, S_hat[nrow(S_hat), 2]),
+                      c(gamma_cor, 0))
+
+### Exponentielle----
+S_hat_correct = function(y) {S_hat[nrow(S_hat), 2]^(y / y_max)} # pour y >= y_max
+
+
+
+
+
+
+
 

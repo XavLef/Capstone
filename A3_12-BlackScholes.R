@@ -85,7 +85,7 @@ mu = (alpha - delt - sigma^2/2) * tt
 
 espSt = s0 * exp(mu + (sigma^2 * tt)/2)
 
-varSt = s0^2 * exp(2 * mu + sigma^2) * (exp(sigma^2) - 1)
+varSt = s0^2 * exp(2 * mu + sigma^2 * tt) * (exp(sigma^2 * tt) - 1)
 
 # Espérance tronquée et conditionnelle de St ----
 s0 = 40
@@ -281,6 +281,73 @@ d2 = d1 - sigma * sqrt(tt - td)
 call_diff = exp(-r * td) * (s0 * exp(-delt * (tt - td)) * pnorm(d1) - K * exp(-r * (tt - td)) * pnorm(d2))
 
 put_diff = exp(-r * td) * ( K * exp(-r * (tt - td)) * pnorm(-d2) - s0 * exp(-delt * (tt - td)) * pnorm(-d1))
+
+## barrière ----
+# Activante (knock-in) : VE nulle si elle n'atteint pas la barrière
+# Désactivante (knock-out) : VE nulle si elle atteint la barrière
+# À la baisse (down) : s0 > B
+# À la hausse (up) : s0 < B
+# Note : il existe donc 8 possibilités (4 pour le call et 4 pour le put)
+# parité : activante + désactivante = classique
+
+s0 = 40
+K = 45
+sigma = 0.3
+alpha = r = 0.08 # environnement neutre au risque
+tt = 1
+delt = 0
+B = 44 # barrière (souvent notée H) (DIFFÉRENCE)
+
+callupin(s = s0, k = K, v = sigma, r = r, tt = tt, d = delt, H = B)
+callupout(s = s0, k = K, v = sigma, r = r, tt = tt, d = delt, H = B)
+putupin(s = s0, k = K, v = sigma, r = r, tt = tt, d = delt, H = B)
+putupout(s = s0, k = K, v = sigma, r = r, tt = tt, d = delt, H = B)
+calldownin(s = s0, k = K, v = sigma, r = r, tt = tt, d = delt, H = B)
+calldownout(s = s0, k = K, v = sigma, r = r, tt = tt, d = delt, H = B)
+putdownin(s = s0, k = K, v = sigma, r = r, tt = tt, d = delt, H = B)
+putdownout(s = s0, k = K, v = sigma, r = r, tt = tt, d = delt, H = B)
+
+## composée ----
+# Ici, on cherche pour quel prix (st1) on va exercer l'option
+
+s0 = 40
+K2 = 40
+sigma = 0.3
+alpha = r = 0.08 # environnement neutre au risque
+T2 = 2
+delt = 0
+T1 = 1
+K1 = 2
+
+### CoC et PoC ----
+call_func = function(st1, K2, sigma, alpha, duree, delt){
+  d1 = (log(st1 / K2) + (alpha - delt + sigma^2/2) * duree) / (sigma * sqrt(duree))
+  d2 = d1 - sigma * sqrt(duree)
+  
+  st1 * exp(-delt * duree) * pnorm(d1) - K2 * exp(-alpha * duree) * pnorm(d2)
+}
+
+result = optimize(function(s_star) abs(call_func(s_star, K2 = K2, sigma = sigma, alpha = r, duree = T2 - T1, delt = delt) - K1),
+  interval = c(0, 100))
+
+st1 = result$minimum
+# verif 
+call_func(st1, K2, sigma, alpha, duree = T2 - T1, delt) # devrait donner K1
+
+### CoP et PoP ----
+put_func = function(st1, K2, sigma, alpha, duree, delt){
+  d1 = (log(st1 / K2) + (alpha - delt + sigma^2/2) * duree) / (sigma * sqrt(duree))
+  d2 = d1 - sigma * sqrt(duree)
+  
+  K2 * exp(-alpha * duree) * pnorm(-d2) - st1 * exp(-delt * duree) * pnorm(-d1)
+}
+
+result = optimize(function(s_star) abs(put_func(s_star, K2 = K2, sigma = sigma, alpha = r, duree = T2 - T1, delt = delt) - K1),
+                  interval = c(0, 100))
+
+st1 = result$minimum
+# verif 
+put_func(st1, K2, sigma, alpha, duree = T2 - T1, delt) # devrait donner K1
 
 # Obtention des paramètres ----
 values <- read.csv2("DonnéesTPGRF2.csv") # prix du s-jacent par période de longueur j
